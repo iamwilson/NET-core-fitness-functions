@@ -26,16 +26,17 @@ namespace FitnessFunctions
             services.AddControllersWithViews();
             services.AddControllers();
             services.AddHealthChecks()
-                .AddUrlGroup(new Uri("https://localhost:44366/home"), name: "Home URL", failureStatus: HealthStatus.Degraded)
-                .AddUrlGroup(new Uri("https://localhost:44366/api/values"), name: "Values URL", failureStatus: HealthStatus.Degraded)
-                .AddCheck<CustomHealthCheck>("Custom Health Check", failureStatus: HealthStatus.Unhealthy);
+                .AddUrlGroup(new Uri("https://localhost:44366/home"), name: "Home URL", failureStatus: HealthStatus.Degraded, tags: new[]{ "home" })
+                .AddUrlGroup(new Uri("https://localhost:44366/api/values"), name: "Values URL", failureStatus: HealthStatus.Degraded, tags: new[] { "values"})
+                .AddCheck<CustomHealthCheck>("Custom Health Check", failureStatus: HealthStatus.Unhealthy, tags: new[] { "custome"});
 
             services.AddHealthChecksUI(opt =>
             {
-                opt.SetEvaluationTimeInSeconds(10); //time in seconds between check    
-                opt.MaximumHistoryEntriesPerEndpoint(60); //maximum history of checks    
+                opt.AddHealthCheckEndpoint("Main APIs", "/health"); //map health check api 
+                opt.MaximumHistoryEntriesPerEndpoint(32); //maximum history of checks    
                 opt.SetApiMaxActiveRequests(1); //api requests concurrency    
-                opt.AddHealthCheckEndpoint("Main APIs", "/health"); //map health check api    
+                opt.SetEvaluationTimeInSeconds(4); //time in seconds between check 
+                opt.SetMinimumSecondsBetweenFailureNotifications(8);
             })
             .AddInMemoryStorage();
         }
