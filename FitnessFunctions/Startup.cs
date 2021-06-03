@@ -1,12 +1,9 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using FitnessFunctions.HealthChecks;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -30,7 +27,17 @@ namespace FitnessFunctions
             services.AddControllers();
             services.AddHealthChecks()
                 .AddUrlGroup(new Uri("https://localhost:44366/home"), name: "Home URL", failureStatus: HealthStatus.Degraded)
-                .AddUrlGroup(new Uri("https://localhost:44366/values"), name: "Values URL", failureStatus: HealthStatus.Degraded);
+                .AddUrlGroup(new Uri("https://localhost:44366/api/values"), name: "Values URL", failureStatus: HealthStatus.Degraded)
+                .AddCheck<CustomHealthCheck>("Custom Health Check", failureStatus: HealthStatus.Unhealthy);
+
+            services.AddHealthChecksUI(opt =>
+            {
+                opt.SetEvaluationTimeInSeconds(10); //time in seconds between check    
+                opt.MaximumHistoryEntriesPerEndpoint(60); //maximum history of checks    
+                opt.SetApiMaxActiveRequests(1); //api requests concurrency    
+                opt.AddHealthCheckEndpoint("Main APIs", "/health"); //map health check api    
+            })
+            .AddInMemoryStorage();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -67,6 +74,7 @@ namespace FitnessFunctions
                 {
                     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
                 });
+                endpoints.MapHealthChecksUI();
             });
         }
     }
